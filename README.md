@@ -13,8 +13,9 @@ by itself.
   note box ("call on line 2").
 - **Being paged** — a Windows notification plus a large red on-screen alert naming
   whoever paged you. Both are optional per person in Settings.
-- **Confirmation** — the sender gets a small "they got your page" notification, or a
-  warning if that PC didn't answer.
+- **If it doesn't arrive** — the sender is warned when the other PC didn't answer, so
+  a page never fails silently. A page that lands says nothing, on the grounds that a
+  notification for every press gets old fast.
 
 ## Install on each PC
 
@@ -55,15 +56,19 @@ Everything stays on the local network. Nothing leaves the building.
 ## Updates
 
 Right-click the tray icon and choose **Check for updates**. If a newer release exists,
-WinPager offers to open the download page; it never installs anything by itself.
+WinPager offers to install it: it downloads the build matching that PC's processor,
+swaps it in, and restarts. Your settings and desk name are kept.
 
 It also checks quietly once a day in the background and only speaks up when there is
 something newer. Turn that off in Settings if you'd rather it stayed off the internet
 entirely. The check contacts `api.github.com` and sends nothing but the request itself,
 no names, no machine details.
 
-To update a PC: close WinPager from the tray, replace the exe, start it again. Settings
-and the desk name are kept.
+The previous build is kept alongside as `WinPager.exe.old` and deleted on the next
+start, so a failed update leaves a working copy behind.
+
+Updating in place needs WinPager to sit in a folder it can write to, such as
+`C:\WinPager\`. Inside `Program Files` it will offer the download page instead.
 
 ## Keeping the bell on the taskbar
 

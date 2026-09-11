@@ -54,7 +54,6 @@ public sealed class TrayContext : ApplicationContext
 
         _service.PeersChanged += OnPeersChanged;
         _service.PageReceived += OnPageReceived;
-        _service.PageDelivered += OnPageDelivered;
         _service.PageFailed += OnPageFailed;
         _service.NetworkError += OnNetworkError;
         _service.IdentityChanged += OnIdentityChanged;
@@ -126,16 +125,87 @@ public sealed class TrayContext : ApplicationContext
             return;
         }
 
+        if (!result.CanInstallInPlace)
+        {
+            // No build matching this processor, so fall back to the download page.
+            var openPage = MessageBox.Show(
+                $"WinPager {result.Latest} is available.\n"
+                + $"You have {UpdateChecker.CurrentVersion}.\n\n"
+                + "Open the download page?",
+                "Update available",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Information);
+
+            if (openPage == DialogResult.Yes)
+                UpdateChecker.OpenDownloadPage(result.DownloadUrl);
+
+            return;
+        }
+
         var answer = MessageBox.Show(
             $"WinPager {result.Latest} is available.\n"
             + $"You have {UpdateChecker.CurrentVersion}.\n\n"
-            + "Open the download page?",
+            + "Update now? WinPager will close and reopen. It takes a few seconds.",
             "Update available",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Information);
 
-        if (answer == DialogResult.Yes)
-            UpdateChecker.OpenDownloadPage(result.DownloadUrl);
+        if (answer != DialogResult.Yes) return;
+
+        await InstallUpdateAsync(result);
+    }
+
+    /// <summary>Download the new build, swap it in, and restart into it.</summary>
+    private async Task InstallUpdateAsync(UpdateChecker.Result result)
+    {
+        _tray.Text = "WinPager — updating…";
+        _tray.ShowBalloonTip(4000, "WinPager", "Downloading the update…", ToolTipIcon.Info);
+
+        var installedPath = await UpdateChecker
+            .DownloadAndSwapAsync(result.AssetUrl!)
+            .ConfigureAwait(true);
+
+        _tray.Text = $"WinPager — {_config.DisplayName}";
+
+        if (installedPath is null)
+        {
+            var openPage = MessageBox.Show(
+                "The update could not be installed. This usually means WinPager is in a "
+                + "folder it cannot write to, such as Program Files.\n\n"
+                + "Open the download page instead?",
+                "WinPager",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (openPage == DialogResult.Yes)
+                UpdateChecker.OpenDownloadPage(result.DownloadUrl);
+
+            return;
+        }
+
+        try
+        {
+            // The flag tells the new copy to wait for this one to release the
+            // single-instance lock, instead of seeing it and giving up.
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(installedPath)
+            {
+                Arguments = Program.RestartAfterUpdateFlag,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            Log.Write($"Could not start the updated build: {ex.Message}");
+            MessageBox.Show(
+                $"The update installed, but WinPager could not restart itself.\n\n"
+                + $"Start it again from {installedPath}.",
+                "WinPager",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+
+        // The new copy takes over, including the single-instance lock.
+        ExitApp();
     }
 
     private void OnTrayClick(object? sender, MouseEventArgs e)
@@ -215,9 +285,6 @@ public sealed class TrayContext : ApplicationContext
             catch (Exception ex) { Log.Write($"Sound failed: {ex.Message}"); }
         }
     }
-
-    private void OnPageDelivered(string peerName) =>
-        _tray.ShowBalloonTip(2500, "Page sent", $"{peerName} got your page.", ToolTipIcon.Info);
 
     private void OnPageFailed(string peerName) =>
         _tray.ShowBalloonTip(5000, "Page not delivered",

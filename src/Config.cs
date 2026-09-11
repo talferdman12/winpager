@@ -23,6 +23,13 @@ public sealed class Config
     /// <summary>Start automatically with Windows (writes an HKCU Run key).</summary>
     public bool StartWithWindows { get; set; } = true;
 
+    /// <summary>Check GitHub for a newer release once a day. Nothing is ever installed
+    /// automatically; the app only offers to open the download page.</summary>
+    public bool CheckForUpdates { get; set; } = true;
+
+    /// <summary>When the last automatic update check ran, so it runs at most daily.</summary>
+    public DateTime LastUpdateCheckUtc { get; set; } = DateTime.MinValue;
+
     /// <summary>UDP port used for discovery and pages. Must match on every machine.</summary>
     public int Port { get; set; } = 45654;
 

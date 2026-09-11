@@ -9,6 +9,7 @@ public sealed class SettingsForm : Form
     private readonly CheckBox _soundBox;
     private readonly CheckBox _flashBox;
     private readonly CheckBox _startupBox;
+    private readonly CheckBox _updateBox;
 
     public SettingsForm(Config config)
     {
@@ -54,6 +55,7 @@ public sealed class SettingsForm : Form
         _soundBox = MakeCheckBox("Play a sound when I'm paged", config.SoundOnPage);
         _flashBox = MakeCheckBox("Show a large on-screen alert, not just the notification", config.FlashWindowOnPage);
         _startupBox = MakeCheckBox("Start automatically when Windows starts", config.StartWithWindows);
+        _updateBox = MakeCheckBox("Check GitHub for updates once a day", config.CheckForUpdates);
 
         var save = MakeButton("Save", DialogResult.OK, Theme.Accent, Color.White);
         var cancel = MakeButton("Cancel", DialogResult.Cancel, Theme.Surface, Theme.Text);
@@ -78,6 +80,8 @@ public sealed class SettingsForm : Form
         _root.Controls.Add(_soundBox);
         _root.Controls.Add(_flashBox);
         _root.Controls.Add(_startupBox);
+        _root.Controls.Add(_updateBox);
+        _root.Controls.Add(MakeVersionLabel());
         _root.Controls.Add(buttonRow);
 
         Controls.Add(_root);
@@ -118,6 +122,15 @@ public sealed class SettingsForm : Form
         AutoSize = true,
         Margin = new Padding(0, Scale(3), 0, Scale(3)),
         MaximumSize = new Size(Scale(400), 0),
+    };
+
+    private Label MakeVersionLabel() => new()
+    {
+        Text = $"Version {UpdateChecker.CurrentVersion}",
+        Font = Theme.SmallFont,
+        ForeColor = Theme.TextMuted,
+        AutoSize = true,
+        Margin = new Padding(0, Scale(12), 0, 0),
     };
 
     private Button MakeButton(string text, DialogResult result, Color back, Color fore)
@@ -172,6 +185,7 @@ public sealed class SettingsForm : Form
             _config.SoundOnPage = _soundBox.Checked;
             _config.FlashWindowOnPage = _flashBox.Checked;
             _config.StartWithWindows = _startupBox.Checked;
+            _config.CheckForUpdates = _updateBox.Checked;
             _config.Save();
 
             Startup.Apply(_config.StartWithWindows);

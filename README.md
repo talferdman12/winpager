@@ -52,6 +52,19 @@ pages carrying the same id are only shown once, so a retry never buzzes a desk t
 
 Everything stays on the local network. Nothing leaves the building.
 
+## Updates
+
+Right-click the tray icon and choose **Check for updates**. If a newer release exists,
+WinPager offers to open the download page; it never installs anything by itself.
+
+It also checks quietly once a day in the background and only speaks up when there is
+something newer. Turn that off in Settings if you'd rather it stayed off the internet
+entirely. The check contacts `api.github.com` and sends nothing but the request itself,
+no names, no machine details.
+
+To update a PC: close WinPager from the tray, replace the exe, start it again. Settings
+and the desk name are kept.
+
 ## Keeping the bell on the taskbar
 
 By default Windows 11 hides new tray icons behind the small arrow. To keep WinPager
@@ -77,6 +90,7 @@ Right-click the tray icon and choose **Settings**:
 | Play a sound | Plays the Windows alert sound when paged |
 | Large on-screen alert | Shows the red alert window, not just the notification |
 | Start with Windows | Adds a login entry for the current user |
+| Check for updates | Asks GitHub once a day whether a newer release exists |
 
 Settings live in `%APPDATA%\WinPager\config.json`. Two extra values in that
 file are not in the Settings window:

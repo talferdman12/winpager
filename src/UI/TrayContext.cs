@@ -30,6 +30,7 @@ public sealed class TrayContext : ApplicationContext
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Open pager", null, (_, _) => TogglePopup());
         menu.Items.Add("Settings…", null, (_, _) => OpenSettings());
+        menu.Items.Add("Check for updates…", null, async (_, _) => await CheckForUpdatesAsync(quiet: false));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Exit", null, (_, _) => ExitApp());
 
@@ -56,6 +57,77 @@ public sealed class TrayContext : ApplicationContext
         _tray.ShowBalloonTip(3000, "WinPager",
             $"Running as \"{config.DisplayName}\". Click the tray icon to page someone.",
             ToolTipIcon.Info);
+
+        _ = RunStartupUpdateCheckAsync();
+    }
+
+    /// <summary>
+    /// A quiet check shortly after launch, at most once a day. It says nothing unless
+    /// there is actually a newer version, so it never interrupts someone's morning.
+    /// </summary>
+    private async Task RunStartupUpdateCheckAsync()
+    {
+        if (!_config.CheckForUpdates) return;
+        if (DateTime.UtcNow - _config.LastUpdateCheckUtc < TimeSpan.FromDays(1)) return;
+
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(20)).ConfigureAwait(true);
+            await CheckForUpdatesAsync(quiet: true).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            Log.Write($"Startup update check failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Looks for a newer release. When <paramref name="quiet"/> is true, says nothing
+    /// unless an update exists; otherwise always reports what it found.
+    /// </summary>
+    private async Task CheckForUpdatesAsync(bool quiet)
+    {
+        _config.LastUpdateCheckUtc = DateTime.UtcNow;
+        _config.Save();
+
+        var result = await UpdateChecker.CheckAsync().ConfigureAwait(true);
+
+        if (!result.Succeeded)
+        {
+            if (!quiet)
+            {
+                MessageBox.Show(
+                    $"Could not check for updates.\n\n{result.Error}",
+                    "WinPager",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+            return;
+        }
+
+        if (!result.IsNewerThanInstalled)
+        {
+            if (!quiet)
+            {
+                MessageBox.Show(
+                    $"WinPager {UpdateChecker.CurrentVersion} is the latest version.",
+                    "WinPager",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            return;
+        }
+
+        var answer = MessageBox.Show(
+            $"WinPager {result.Latest} is available.\n"
+            + $"You have {UpdateChecker.CurrentVersion}.\n\n"
+            + "Open the download page?",
+            "Update available",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Information);
+
+        if (answer == DialogResult.Yes)
+            UpdateChecker.OpenDownloadPage(result.DownloadUrl);
     }
 
     private void OnTrayClick(object? sender, MouseEventArgs e)

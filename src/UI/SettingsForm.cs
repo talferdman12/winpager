@@ -4,6 +4,7 @@ namespace WinPager.UI;
 public sealed class SettingsForm : Form
 {
     private readonly Config _config;
+    private readonly TableLayoutPanel _root;
     private readonly TextBox _nameBox;
     private readonly CheckBox _soundBox;
     private readonly CheckBox _flashBox;
@@ -18,100 +19,139 @@ public sealed class SettingsForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         MaximizeBox = false;
         MinimizeBox = false;
-        ClientSize = new Size(400, 260);
+        ShowInTaskbar = true;
         BackColor = Theme.Background;
         ForeColor = Theme.Text;
-        Font = Theme.SmallFont;
+        Font = Theme.BodyFont;
 
-        var nameLabel = new Label
+        // Everything below is laid out by preferred size rather than fixed pixels,
+        // so it stays readable at 125%, 150% and 200% display scaling.
+        AutoScaleMode = AutoScaleMode.Font;
+
+        _root = new TableLayoutPanel
         {
-            Text = "This desk is called:",
-            Location = new Point(20, 22),
-            Size = new Size(360, 20),
-            ForeColor = Theme.Text,
+            ColumnCount = 1,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Top,
+            BackColor = Theme.Background,
+            Padding = new Padding(Scale(20), Scale(18), Scale(20), Scale(18)),
         };
+        _root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
 
         _nameBox = new TextBox
         {
             Text = config.DisplayName,
-            Location = new Point(20, 46),
-            Size = new Size(360, 26),
             BackColor = Theme.Surface,
             ForeColor = Theme.Text,
             BorderStyle = BorderStyle.FixedSingle,
             Font = Theme.TitleFont,
             MaxLength = 40,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, Scale(6), 0, Scale(4)),
         };
 
-        var hint = new Label
+        _soundBox = MakeCheckBox("Play a sound when I'm paged", config.SoundOnPage);
+        _flashBox = MakeCheckBox("Show a large on-screen alert, not just the notification", config.FlashWindowOnPage);
+        _startupBox = MakeCheckBox("Start automatically when Windows starts", config.StartWithWindows);
+
+        var save = MakeButton("Save", DialogResult.OK, Theme.Accent, Color.White);
+        var cancel = MakeButton("Cancel", DialogResult.Cancel, Theme.Surface, Theme.Text);
+
+        var buttonRow = new FlowLayoutPanel
         {
-            Text = "Everyone else sees this name on their page button.",
-            Location = new Point(20, 78),
-            Size = new Size(360, 18),
-            ForeColor = Theme.TextMuted,
+            FlowDirection = FlowDirection.RightToLeft,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, Scale(16), 0, 0),
+            BackColor = Theme.Background,
         };
+        buttonRow.Controls.Add(cancel);
+        buttonRow.Controls.Add(save);
 
-        _soundBox = new CheckBox
-        {
-            Text = "Play a sound when I'm paged",
-            Checked = config.SoundOnPage,
-            Location = new Point(20, 110),
-            Size = new Size(360, 24),
-            ForeColor = Theme.Text,
-            FlatStyle = FlatStyle.Flat,
-        };
+        _root.Controls.Add(MakeLabel("This desk is called:", Theme.BodyFont, Theme.Text));
+        _root.Controls.Add(_nameBox);
+        _root.Controls.Add(MakeLabel(
+            "Everyone else sees this name on their page button.", Theme.SmallFont, Theme.TextMuted));
+        _root.Controls.Add(MakeSpacer());
+        _root.Controls.Add(_soundBox);
+        _root.Controls.Add(_flashBox);
+        _root.Controls.Add(_startupBox);
+        _root.Controls.Add(buttonRow);
 
-        _flashBox = new CheckBox
-        {
-            Text = "Show a large on-screen alert (not just the notification)",
-            Checked = config.FlashWindowOnPage,
-            Location = new Point(20, 138),
-            Size = new Size(360, 24),
-            ForeColor = Theme.Text,
-            FlatStyle = FlatStyle.Flat,
-        };
-
-        _startupBox = new CheckBox
-        {
-            Text = "Start automatically when Windows starts",
-            Checked = config.StartWithWindows,
-            Location = new Point(20, 166),
-            Size = new Size(360, 24),
-            ForeColor = Theme.Text,
-            FlatStyle = FlatStyle.Flat,
-        };
-
-        var save = new Button
-        {
-            Text = "Save",
-            DialogResult = DialogResult.OK,
-            Location = new Point(212, 210),
-            Size = new Size(80, 30),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = Theme.Accent,
-            ForeColor = Color.White,
-        };
-        save.FlatAppearance.BorderSize = 0;
-
-        var cancel = new Button
-        {
-            Text = "Cancel",
-            DialogResult = DialogResult.Cancel,
-            Location = new Point(300, 210),
-            Size = new Size(80, 30),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = Theme.Surface,
-            ForeColor = Theme.Text,
-        };
-        cancel.FlatAppearance.BorderSize = 0;
-
-        Controls.AddRange([nameLabel, _nameBox, hint, _soundBox, _flashBox, _startupBox, save, cancel]);
+        Controls.Add(_root);
         AcceptButton = save;
         CancelButton = cancel;
     }
 
     /// <summary>True when the display name changed, so the caller can re-announce.</summary>
     public bool NameChanged { get; private set; }
+
+    private int Scale(int logicalPixels) => LogicalToDeviceUnits(logicalPixels);
+
+    private Label MakeLabel(string text, Font font, Color color) => new()
+    {
+        Text = text,
+        Font = font,
+        ForeColor = color,
+        AutoSize = true,
+        Margin = new Padding(0, 0, 0, Scale(2)),
+        MaximumSize = new Size(Scale(400), 0),
+    };
+
+    private Label MakeSpacer() => new()
+    {
+        AutoSize = false,
+        Height = Scale(10),
+        Width = 1,
+        Margin = Padding.Empty,
+    };
+
+    private CheckBox MakeCheckBox(string text, bool isChecked) => new()
+    {
+        Text = text,
+        Checked = isChecked,
+        ForeColor = Theme.Text,
+        BackColor = Theme.Background,
+        FlatStyle = FlatStyle.Flat,
+        AutoSize = true,
+        Margin = new Padding(0, Scale(3), 0, Scale(3)),
+        MaximumSize = new Size(Scale(400), 0),
+    };
+
+    private Button MakeButton(string text, DialogResult result, Color back, Color fore)
+    {
+        var button = new Button
+        {
+            Text = text,
+            DialogResult = result,
+            BackColor = back,
+            ForeColor = fore,
+            FlatStyle = FlatStyle.Flat,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            MinimumSize = new Size(Scale(90), Scale(32)),
+            Padding = new Padding(Scale(10), Scale(4), Scale(10), Scale(4)),
+            Margin = new Padding(Scale(8), 0, 0, 0),
+            Cursor = Cursors.Hand,
+        };
+
+        button.FlatAppearance.BorderSize = 0;
+        return button;
+    }
+
+    protected override void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+
+        DarkMode.Apply(this);
+
+        // Size the dialog to whatever the content actually needs at this DPI.
+        _root.Width = Scale(420);
+        ClientSize = new Size(_root.Width, _root.PreferredSize.Height);
+        CenterToScreen();
+    }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {

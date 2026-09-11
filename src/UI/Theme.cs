@@ -12,8 +12,10 @@ public static class Theme
     public static readonly Color TextMuted = Color.FromArgb(150, 156, 168);
     public static readonly Color Accent = Color.FromArgb(62, 108, 216);
     public static readonly Color Alert = Color.FromArgb(214, 62, 62);
+    public static readonly Color Divider = Color.FromArgb(58, 62, 72);
 
     public static readonly Font TitleFont = new("Segoe UI Semibold", 11f);
+    public static readonly Font BodyFont = new("Segoe UI", 10f);
     public static readonly Font ButtonFont = new("Segoe UI Semibold", 12f);
     public static readonly Font SmallFont = new("Segoe UI", 9f);
     public static readonly Font AlertFont = new("Segoe UI Semibold", 20f);

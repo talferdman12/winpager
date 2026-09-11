@@ -8,16 +8,15 @@ namespace WinPager.UI;
 /// </summary>
 public sealed class PagerPopup : Form
 {
-    private const int ButtonHeight = 46;
-    private const int Padding_ = 10;
-    private const int PopupWidth = 280;
-
     private readonly PeerService _service;
     private readonly Config _config;
-    private readonly FlowLayoutPanel _list;
+    private readonly TableLayoutPanel _root;
+    private readonly Panel _listHost;
+    private readonly TableLayoutPanel _list;
     private readonly Label _emptyLabel;
     private readonly TextBox _noteBox;
-    private readonly Label _statusLabel;
+    private readonly Label _footer;
+
     private DateTime _hiddenAtUtc = DateTime.MinValue;
 
     public PagerPopup(PeerService service, Config config)
@@ -30,86 +29,99 @@ public sealed class PagerPopup : Form
         StartPosition = FormStartPosition.Manual;
         BackColor = Theme.Background;
         ForeColor = Theme.Text;
-        Width = PopupWidth;
         KeyPreview = true;
         TopMost = true;
+
+        // Sizes come from preferred content size, never fixed pixels, so the popup
+        // stays correct at 125%, 150% and 200% display scaling.
+        AutoScaleMode = AutoScaleMode.Font;
 
         var header = new Label
         {
             Text = "Page someone",
             Font = Theme.TitleFont,
             ForeColor = Theme.Text,
-            AutoSize = false,
-            Height = 34,
-            Dock = DockStyle.Top,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(Padding_, 0, 0, 0),
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 0, 0, Scale(10)),
         };
 
-        _list = new FlowLayoutPanel
+        _list = new TableLayoutPanel
         {
-            Dock = DockStyle.Top,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false,
+            ColumnCount = 1,
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Padding = new Padding(Padding_, 0, Padding_, 0),
+            Dock = DockStyle.Top,
             BackColor = Theme.Background,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
         };
+        _list.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
 
         _emptyLabel = new Label
         {
-            Text = "No other desks online yet.\nMake sure the app is running there\nand both PCs are on the same network.",
+            Text = "No other desks online yet.\r\n\r\nMake sure WinPager is running there, "
+                 + "and that both PCs are on the same network.",
             Font = Theme.SmallFont,
             ForeColor = Theme.TextMuted,
-            AutoSize = false,
-            Height = 70,
-            Width = PopupWidth - (Padding_ * 2),
+            AutoSize = true,
+            Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
+            Margin = new Padding(Scale(6), Scale(10), Scale(6), Scale(10)),
             Visible = false,
         };
 
+        // Scrolls rather than growing without limit once the office gets big.
+        _listHost = new Panel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            BackColor = Theme.Background,
+            Margin = Padding.Empty,
+        };
+        _listHost.Controls.Add(_list);
+
         _noteBox = new TextBox
         {
-            PlaceholderText = "Optional note (e.g. call on line 2)",
+            PlaceholderText = "Optional note, e.g. call on line 2",
             BorderStyle = BorderStyle.FixedSingle,
             BackColor = Theme.Surface,
             ForeColor = Theme.Text,
-            Font = Theme.SmallFont,
-            Width = PopupWidth - (Padding_ * 2),
-            Margin = new Padding(Padding_, 4, Padding_, 4),
+            Font = Theme.BodyFont,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, Scale(10), 0, Scale(8)),
         };
 
-        _statusLabel = new Label
+        _footer = new Label
         {
-            Text = $"You are \"{config.DisplayName}\"",
             Font = Theme.SmallFont,
             ForeColor = Theme.TextMuted,
-            AutoSize = false,
-            Height = 24,
-            Dock = DockStyle.Bottom,
-            TextAlign = ContentAlignment.MiddleCenter,
-        };
-
-        var container = new Panel { Dock = DockStyle.Fill, BackColor = Theme.Background };
-        var bottom = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Bottom,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false,
             AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            BackColor = Theme.Background,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Margin = Padding.Empty,
         };
-        bottom.Controls.Add(_noteBox);
 
-        container.Controls.Add(_list);
-        Controls.Add(container);
-        Controls.Add(bottom);
-        Controls.Add(_statusLabel);
-        Controls.Add(header);
+        _root = new TableLayoutPanel
+        {
+            ColumnCount = 1,
+            RowCount = 4,
+            Dock = DockStyle.Fill,
+            BackColor = Theme.Background,
+            Padding = new Padding(Scale(14), Scale(12), Scale(14), Scale(12)),
+        };
+        _root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        _root.RowStyles.Add(new RowStyle(SizeType.AutoSize));   // header
+        _root.RowStyles.Add(new RowStyle(SizeType.Percent, 100f)); // peer list
+        _root.RowStyles.Add(new RowStyle(SizeType.AutoSize));   // note
+        _root.RowStyles.Add(new RowStyle(SizeType.AutoSize));   // footer
 
-        _list.Controls.Add(_emptyLabel);
+        _root.Controls.Add(header, 0, 0);
+        _root.Controls.Add(_listHost, 0, 1);
+        _root.Controls.Add(_noteBox, 0, 2);
+        _root.Controls.Add(_footer, 0, 3);
+
+        Controls.Add(_root);
 
         _service.PeersChanged += OnPeersChanged;
         KeyDown += OnKeyDown;
@@ -120,6 +132,8 @@ public sealed class PagerPopup : Form
     public double MillisecondsSinceHidden =>
         (DateTime.UtcNow - _hiddenAtUtc).TotalMilliseconds;
 
+    private int Scale(int logicalPixels) => LogicalToDeviceUnits(logicalPixels);
+
     protected override void OnVisibleChanged(EventArgs e)
     {
         if (!Visible) _hiddenAtUtc = DateTime.UtcNow;
@@ -129,14 +143,14 @@ public sealed class PagerPopup : Form
     /// <summary>Show the popup anchored to the notification area on the active screen.</summary>
     public void ShowNear()
     {
-        Rebuild(_service.Peers);
-        _statusLabel.Text = $"You are \"{_config.DisplayName}\"";
+        _footer.Text = $"You are \"{_config.DisplayName}\"";
         _noteBox.Clear();
+        Rebuild(_service.Peers);
 
         var area = Screen.FromPoint(Cursor.Position).WorkingArea;
         Location = new Point(
-            area.Right - Width - 12,
-            area.Bottom - Height - 12);
+            area.Right - Width - Scale(12),
+            area.Bottom - Height - Scale(12));
 
         Show();
         Activate();
@@ -151,24 +165,48 @@ public sealed class PagerPopup : Form
 
     private void Rebuild(IReadOnlyList<Peer> peers)
     {
+        SuspendLayout();
         _list.SuspendLayout();
 
-        foreach (var control in _list.Controls.OfType<Control>().Where(c => c != _emptyLabel).ToList())
+        // Dispose before clearing: once the collection is emptied there is nothing
+        // left to enumerate, and the old buttons would leak their handles.
+        var stale = _list.Controls.OfType<Button>().ToList();
+        _list.Controls.Clear();
+        foreach (var button in stale)
+            button.Dispose();
+        _list.RowStyles.Clear();
+
+        if (peers.Count == 0)
         {
-            _list.Controls.Remove(control);
-            control.Dispose();
+            _list.Controls.Add(_emptyLabel, 0, 0);
+            _emptyLabel.Visible = true;
+        }
+        else
+        {
+            _emptyLabel.Visible = false;
+            var row = 0;
+            foreach (var peer in peers)
+            {
+                _list.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                _list.Controls.Add(CreatePeerButton(peer), 0, row++);
+            }
         }
 
-        _emptyLabel.Visible = peers.Count == 0;
+        _list.ResumeLayout(performLayout: true);
 
-        foreach (var peer in peers)
-            _list.Controls.Add(CreatePeerButton(peer));
+        // Width is fixed; height follows the content, capped so a big office scrolls.
+        var width = Scale(300);
+        var listHeight = Math.Min(_list.PreferredSize.Height, Scale(360));
+        _listHost.Height = listHeight;
 
-        _list.ResumeLayout();
+        var chrome = _root.Padding.Vertical
+                   + _root.GetControlFromPosition(0, 0)!.Height + Scale(10)
+                   + _noteBox.Height + _noteBox.Margin.Vertical
+                   + _footer.Height;
 
-        // Height = header + list + note + status, clamped so a big office still fits.
-        var listHeight = Math.Min(_list.PreferredSize.Height, 420);
-        Height = 34 + listHeight + 40 + 24 + Padding_;
+        ClientSize = new Size(width, listHeight + chrome);
+
+        ResumeLayout(performLayout: true);
     }
 
     private Button CreatePeerButton(Peer peer)
@@ -176,17 +214,17 @@ public sealed class PagerPopup : Form
         var button = new Button
         {
             Text = peer.Name,
-            Width = PopupWidth - (Padding_ * 2) - 2,
-            Height = ButtonHeight,
+            Dock = DockStyle.Fill,
+            Height = Scale(44),
             FlatStyle = FlatStyle.Flat,
             BackColor = Theme.Surface,
             ForeColor = Theme.Text,
             Font = Theme.ButtonFont,
             TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(12, 0, 0, 0),
-            Margin = new Padding(0, 0, 0, 6),
+            Padding = new Padding(Scale(12), 0, Scale(8), 0),
+            Margin = new Padding(0, 0, 0, Scale(6)),
             Cursor = Cursors.Hand,
-            Tag = peer.Id,
+            UseVisualStyleBackColor = false,
         };
 
         button.FlatAppearance.BorderSize = 0;
@@ -220,6 +258,15 @@ public sealed class PagerPopup : Form
     {
         if (e.KeyCode == Keys.Escape)
             Hide();
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+
+        // A one-pixel border keeps the popup distinct from whatever is behind it.
+        using var pen = new Pen(Theme.Divider);
+        e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
     }
 
     protected override void OnDeactivate(EventArgs e)

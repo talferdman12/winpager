@@ -12,6 +12,7 @@ public sealed class AlertForm : Form
     private static readonly TimeSpan AutoDismissAfter = TimeSpan.FromSeconds(25);
 
     private readonly System.Windows.Forms.Timer _dismissTimer;
+    private readonly TableLayoutPanel _root;
 
     public AlertForm(PagerMessage page, bool playSound)
     {
@@ -20,64 +21,38 @@ public sealed class AlertForm : Form
         ShowInTaskbar = false;
         TopMost = true;
         BackColor = Theme.Alert;
-        Width = 380;
-        Height = string.IsNullOrWhiteSpace(page.Text) ? 130 : 175;
+        AutoScaleMode = AutoScaleMode.Font;
 
-        var title = new Label
+        _root = new TableLayoutPanel
         {
-            Text = "📟  You're being paged",
-            Font = Theme.SmallFont,
-            ForeColor = Color.FromArgb(255, 220, 220),
+            ColumnCount = 1,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             Dock = DockStyle.Top,
-            Height = 30,
-            TextAlign = ContentAlignment.MiddleCenter,
+            BackColor = Theme.Alert,
+            Padding = new Padding(Scale(18), Scale(14), Scale(18), Scale(14)),
         };
+        _root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
 
-        var who = new Label
+        _root.Controls.Add(MakeLabel(
+            "You're being paged", Theme.SmallFont, Color.FromArgb(255, 214, 214)));
+        _root.Controls.Add(MakeLabel(
+            page.SenderName, Theme.AlertFont, Color.White));
+
+        if (!string.IsNullOrWhiteSpace(page.Text))
         {
-            Text = page.SenderName,
-            Font = Theme.AlertFont,
-            ForeColor = Color.White,
-            Dock = DockStyle.Top,
-            Height = 44,
-            TextAlign = ContentAlignment.MiddleCenter,
-        };
+            _root.Controls.Add(MakeLabel(
+                page.Text, Theme.TitleFont, Color.FromArgb(255, 236, 236)));
+        }
 
-        var note = new Label
-        {
-            Text = page.Text ?? "",
-            Font = Theme.TitleFont,
-            ForeColor = Color.FromArgb(255, 235, 235),
-            Dock = DockStyle.Top,
-            Height = string.IsNullOrWhiteSpace(page.Text) ? 0 : 44,
-            TextAlign = ContentAlignment.MiddleCenter,
-            Visible = !string.IsNullOrWhiteSpace(page.Text),
-        };
+        _root.Controls.Add(MakeLabel(
+            "Click to dismiss", Theme.SmallFont, Color.FromArgb(255, 196, 196)));
 
-        var dismiss = new Label
-        {
-            Text = "Click anywhere to dismiss",
-            Font = Theme.SmallFont,
-            ForeColor = Color.FromArgb(255, 200, 200),
-            Dock = DockStyle.Bottom,
-            Height = 26,
-            TextAlign = ContentAlignment.MiddleCenter,
-        };
+        Controls.Add(_root);
 
-        Controls.Add(dismiss);
-        Controls.Add(note);
-        Controls.Add(who);
-        Controls.Add(title);
-
-        // Any click, anywhere on the alert, closes it.
+        // A click anywhere on the alert, including on any label, closes it.
         Click += (_, _) => Close();
-        foreach (Control child in Controls)
-            child.Click += (_, _) => Close();
-
-        var area = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 800);
-        Location = new Point(
-            area.Right - Width - 16,
-            area.Bottom - Height - 16);
+        AddClickToClose(this);
 
         _dismissTimer = new System.Windows.Forms.Timer
         {
@@ -93,8 +68,53 @@ public sealed class AlertForm : Form
         }
     }
 
+    private int Scale(int logicalPixels) => LogicalToDeviceUnits(logicalPixels);
+
+    private Label MakeLabel(string text, Font font, Color color) => new()
+    {
+        Text = text,
+        Font = font,
+        ForeColor = color,
+        BackColor = Theme.Alert,
+        AutoSize = true,
+        Dock = DockStyle.Fill,
+        TextAlign = ContentAlignment.MiddleCenter,
+        Margin = new Padding(0, Scale(2), 0, Scale(2)),
+        MaximumSize = new Size(Scale(340), 0),
+    };
+
+    private void AddClickToClose(Control parent)
+    {
+        foreach (Control child in parent.Controls)
+        {
+            child.Click += (_, _) => Close();
+            AddClickToClose(child);
+        }
+    }
+
+    protected override void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+
+        _root.Width = Scale(360);
+        ClientSize = new Size(_root.Width, _root.PreferredSize.Height);
+
+        var area = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 800);
+        Location = new Point(
+            area.Right - Width - Scale(16),
+            area.Bottom - Height - Scale(16));
+    }
+
     /// <summary>Show without stealing keyboard focus from whatever the user is typing in.</summary>
     protected override bool ShowWithoutActivation => true;
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+
+        using var pen = new Pen(Color.FromArgb(255, 120, 120));
+        e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
+    }
 
     protected override void Dispose(bool disposing)
     {

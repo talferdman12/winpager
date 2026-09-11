@@ -52,6 +52,21 @@ pages carrying the same id are only shown once, so a retry never buzzes a desk t
 
 Everything stays on the local network. Nothing leaves the building.
 
+## Keeping the bell on the taskbar
+
+By default Windows 11 hides new tray icons behind the small arrow. To keep WinPager
+visible, pick either:
+
+- **Drag it.** Click the arrow, then drag the bell down onto the taskbar. It stays.
+- **Settings.** Settings > Personalization > Taskbar > Other system tray icons, then
+  turn **WinPager** on.
+- **Script.** Run WinPager once, then double-click `pin-to-taskbar.bat`. It sets the
+  flag for you and restarts Explorer. This one uses an undocumented registry value,
+  so treat it as a convenience rather than something to rely on.
+
+There is no way for the app to claim a permanent taskbar slot on its own. Windows
+treats it as the user's choice.
+
 ## Settings
 
 Right-click the tray icon and choose **Settings**:

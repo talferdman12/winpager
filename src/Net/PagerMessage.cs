@@ -30,4 +30,9 @@ public sealed class PagerMessage
     [JsonPropertyName("m")] public string? Text { get; set; }
     /// <summary>Unique id for one page, echoed back in the Ack.</summary>
     [JsonPropertyName("pid")] public string? PageId { get; set; }
+
+    /// <summary>Random per-launch token. Two machines carrying the same DeviceId,
+    /// which happens when a PC is deployed by cloning a disk image, still differ
+    /// here, so each can tell a real clash from the echo of its own broadcast.</summary>
+    [JsonPropertyName("t")] public string InstanceToken { get; set; } = "";
 }

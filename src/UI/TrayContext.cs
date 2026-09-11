@@ -31,6 +31,7 @@ public sealed class TrayContext : ApplicationContext
         menu.Items.Add("Open pager", null, (_, _) => TogglePopup());
         menu.Items.Add("Settings…", null, (_, _) => OpenSettings());
         menu.Items.Add("Check for updates…", null, async (_, _) => await CheckForUpdatesAsync(quiet: false));
+        menu.Items.Add("Open log folder", null, (_, _) => OpenLogFolder());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Exit", null, (_, _) => ExitApp());
 
@@ -50,6 +51,7 @@ public sealed class TrayContext : ApplicationContext
         _service.PageDelivered += OnPageDelivered;
         _service.PageFailed += OnPageFailed;
         _service.NetworkError += OnNetworkError;
+        _service.IdentityChanged += OnIdentityChanged;
 
         _service.Start();
         Startup.Apply(config.StartWithWindows);
@@ -215,6 +217,27 @@ public sealed class TrayContext : ApplicationContext
         _tray.ShowBalloonTip(5000, "Page not delivered",
             $"{peerName} did not respond. Their PC may be asleep or off the network.",
             ToolTipIcon.Error);
+
+    private void OnIdentityChanged(string _) =>
+        _tray.ShowBalloonTip(6000, "WinPager",
+            "This PC shares an identity with another one, which happens when a PC is " +
+            "set up by copying another. WinPager gave it a new identity, so the two can " +
+            "now see each other. Give them different desk names in Settings.",
+            ToolTipIcon.Info);
+
+    private void OpenLogFolder()
+    {
+        try
+        {
+            Directory.CreateDirectory(Config.ConfigDirectory);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
+                Config.ConfigDirectory) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Log.Write($"Could not open the log folder: {ex.Message}");
+        }
+    }
 
     private void OnNetworkError(string message) =>
         _tray.ShowBalloonTip(8000, "WinPager", message, ToolTipIcon.Error);

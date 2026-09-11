@@ -102,14 +102,21 @@ file are not in the Settings window:
 
 ## If someone doesn't show up in the list
 
+0. **Was this PC set up by copying another one?** Cloning a VM or a disk image copies
+   WinPager's identity along with it, and two PCs with the same identity mistake each
+   other's messages for their own. WinPager notices this and gives itself a new identity
+   within a few seconds, so just leave both running for a moment. On builds before
+   1.0.3, delete `%APPDATA%\WinPager\config.json` on one of them and restart it.
+   Remember to give the copies different desk names in Settings, or every button
+   will read the same.
 1. **Both PCs on the same network?** Wi-Fi and Ethernet on the same office router is
    fine. A guest network or a VPN is not.
 2. **Firewall.** Right-click `allow-through-firewall.bat` → Run as administrator, on
    the PC that isn't appearing.
 3. **Is it running there?** Look for the bell in that PC's tray. It hides in the
    overflow arrow by default; drag it onto the visible part of the taskbar.
-4. **Check the log** at `%APPDATA%\WinPager\pager.log`. It records every
-   discovery, page, and error.
+4. **Check the log.** Right-click the tray icon and choose **Open log folder**, then
+   open `pager.log`. It records every discovery, page, identity change, and error.
 
 Some business networks block broadcast traffic between wired and wireless segments.
 If wired PCs see each other but wireless ones don't, that's the cause, and it's a

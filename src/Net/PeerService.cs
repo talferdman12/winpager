@@ -27,6 +27,9 @@ public sealed class PeerService : IDisposable
     private readonly ConcurrentDictionary<string, DateTime> _seenPageIds = new(StringComparer.Ordinal);
     private readonly CancellationTokenSource _cts = new();
 
+    /// <summary>Unique to this process run. See <see cref="PagerMessage.InstanceToken"/>.</summary>
+    private readonly string _instanceToken = Guid.NewGuid().ToString("N");
+
     private UdpClient? _udp;
     private System.Threading.Timer? _heartbeat;
     private bool _disposed;
@@ -53,6 +56,9 @@ public sealed class PeerService : IDisposable
 
     /// <summary>Fires on a networking problem worth telling the user about.</summary>
     public event Action<string>? NetworkError;
+
+    /// <summary>Fires when this machine had to take a new device id after a clash.</summary>
+    public event Action<string>? IdentityChanged;
 
     public IReadOnlyList<Peer> Peers =>
         _peers.Values.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
@@ -202,9 +208,21 @@ public sealed class PeerService : IDisposable
         var msg = JsonSerializer.Deserialize<PagerMessage>(Encoding.UTF8.GetString(buffer));
         if (msg is null) return;
 
-        // Ignore other groups and our own broadcasts echoing back.
         if (!string.Equals(msg.GroupKey, _config.GroupKey, StringComparison.Ordinal)) return;
-        if (string.Equals(msg.SenderId, _config.DeviceId, StringComparison.Ordinal)) return;
+
+        if (string.Equals(msg.SenderId, _config.DeviceId, StringComparison.Ordinal))
+        {
+            // Our own broadcast coming back to us: ignore it.
+            if (string.Equals(msg.InstanceToken, _instanceToken, StringComparison.Ordinal))
+                return;
+
+            // Same device id, different process: another PC was deployed by cloning
+            // this one's disk, so it inherited our identity. Without this, the two
+            // would filter each other out as self and never appear in each other's
+            // lists. Take a fresh identity and re-announce.
+            ResolveIdentityClash(msg, from);
+            return;
+        }
 
         switch (msg.Kind)
         {
@@ -254,6 +272,24 @@ public sealed class PeerService : IDisposable
                     Raise(PageDelivered, pending.PeerName);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Give this machine a new device id after discovering another machine using the
+    /// same one. Both sides do this, so whichever order they notice in, they end up
+    /// with distinct identities within a heartbeat.
+    /// </summary>
+    private void ResolveIdentityClash(PagerMessage msg, IPEndPoint from)
+    {
+        var old = _config.DeviceId;
+        _config.DeviceId = Guid.NewGuid().ToString("N");
+        _config.Save();
+
+        Log.Write($"Device id clash with {msg.SenderName} at {from} " +
+                  $"(both were {old[..8]}); took the new id {_config.DeviceId[..8]}");
+
+        Raise(IdentityChanged, _config.DeviceId);
+        AnnounceNow();
     }
 
     /// <summary>True if we've already alerted for this page id. Also prunes old ids.</summary>
@@ -319,6 +355,7 @@ public sealed class PeerService : IDisposable
         msg.SenderId = _config.DeviceId;
         msg.SenderName = _config.DisplayName;
         msg.GroupKey = _config.GroupKey;
+        msg.InstanceToken = _instanceToken;
 
         try
         {

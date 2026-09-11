@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -21,7 +22,7 @@ public sealed class PeerService : IDisposable
     private static readonly TimeSpan AckTimeout = TimeSpan.FromSeconds(3);
 
     private readonly Config _config;
-    private readonly SynchronizationContext? _uiContext;
+    private readonly ISynchronizeInvoke? _uiInvoker;
     private readonly ConcurrentDictionary<string, Peer> _peers = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, PendingPage> _pending = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, DateTime> _seenPageIds = new(StringComparer.Ordinal);
@@ -36,10 +37,17 @@ public sealed class PeerService : IDisposable
 
     private sealed record PendingPage(string PeerId, string PeerName, DateTime SentUtc);
 
-    public PeerService(Config config)
+    /// <param name="uiInvoker">
+    /// A window whose handle belongs to the UI thread. Events are marshalled through
+    /// it, because they are raised from the socket thread and their handlers create
+    /// and touch windows. Capturing SynchronizationContext.Current here would not do:
+    /// this object is built before any window exists, so the current context is still
+    /// null and every handler would run on the wrong thread.
+    /// </param>
+    public PeerService(Config config, ISynchronizeInvoke? uiInvoker = null)
     {
         _config = config;
-        _uiContext = SynchronizationContext.Current;
+        _uiInvoker = uiInvoker;
     }
 
     /// <summary>Fires whenever the peer list changes (someone joined, left, or renamed).</summary>
@@ -406,15 +414,27 @@ public sealed class PeerService : IDisposable
         return targets.DistinctBy(e => e.ToString()).ToList();
     }
 
-    /// <summary>Marshal an event back to the UI thread so handlers can touch controls safely.</summary>
+    /// <summary>Marshal an event to the UI thread so handlers can touch windows safely.</summary>
     private void Raise<T>(Action<T>? handler, T arg)
     {
         if (handler is null) return;
 
-        if (_uiContext is not null)
-            _uiContext.Post(_ => handler(arg), null);
-        else
-            handler(arg);
+        if (_uiInvoker is { InvokeRequired: true })
+        {
+            try
+            {
+                _uiInvoker.BeginInvoke(handler, [arg]);
+            }
+            catch (Exception ex) when (ex is ObjectDisposedException or InvalidOperationException)
+            {
+                // The UI is going away; the event no longer has anywhere to land.
+                Log.Write($"Could not deliver event to the UI: {ex.Message}");
+            }
+
+            return;
+        }
+
+        handler(arg);
     }
 
     public void Dispose()

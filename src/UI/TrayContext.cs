@@ -9,6 +9,7 @@ namespace WinPager.UI;
 public sealed class TrayContext : ApplicationContext
 {
     private readonly Config _config;
+    private readonly UiThreadAnchor _uiAnchor;
     private readonly PeerService _service;
     private readonly NotifyIcon _tray;
     private readonly PagerPopup _popup;
@@ -18,7 +19,12 @@ public sealed class TrayContext : ApplicationContext
     public TrayContext(Config config)
     {
         _config = config;
-        _service = new PeerService(config);
+
+        // Built first, and on this thread, so the service has somewhere to marshal
+        // its events. Everything it raises arrives from a socket thread and ends up
+        // creating or touching windows.
+        _uiAnchor = new UiThreadAnchor();
+        _service = new PeerService(config, _uiAnchor);
         _popup = new PagerPopup(_service, config);
 
         _peersHeader = new ToolStripMenuItem("Looking for other desks…") { Enabled = false };
@@ -258,7 +264,29 @@ public sealed class TrayContext : ApplicationContext
         _service.Dispose();
         _popup.Dispose();
         _tray.Dispose();
+        _uiAnchor.Dispose();
         ExitThread();
+    }
+
+    /// <summary>
+    /// An invisible window that exists only to own a handle on the UI thread, giving
+    /// background threads something to marshal through. It is never shown.
+    /// </summary>
+    private sealed class UiThreadAnchor : Form
+    {
+        public UiThreadAnchor()
+        {
+            FormBorderStyle = FormBorderStyle.None;
+            ShowInTaskbar = false;
+            StartPosition = FormStartPosition.Manual;
+            Location = new Point(-32000, -32000);
+            Size = new Size(1, 1);
+
+            // Force the handle now, on this thread, rather than on first use.
+            _ = Handle;
+        }
+
+        protected override void SetVisibleCore(bool value) => base.SetVisibleCore(false);
     }
 
     protected override void Dispose(bool disposing)

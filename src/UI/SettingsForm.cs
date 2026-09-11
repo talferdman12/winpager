@@ -1,4 +1,4 @@
-namespace ChabadOfficePager.UI;
+namespace WinPager.UI;
 
 /// <summary>Lets the user name this desk and pick their alert preferences.</summary>
 public sealed class SettingsForm : Form
@@ -13,7 +13,7 @@ public sealed class SettingsForm : Form
     {
         _config = config;
 
-        Text = "Chabad Office Pager — Settings";
+        Text = "WinPager — Settings";
         FormBorderStyle = FormBorderStyle.FixedDialog;
         StartPosition = FormStartPosition.CenterScreen;
         MaximizeBox = false;
@@ -120,7 +120,7 @@ public sealed class SettingsForm : Form
             var newName = _nameBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(newName))
             {
-                MessageBox.Show(this, "Please give this desk a name.", "Chabad Office Pager",
+                MessageBox.Show(this, "Please give this desk a name.", "WinPager",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 e.Cancel = true;
                 return;

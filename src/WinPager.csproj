@@ -6,11 +6,11 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>ChabadOfficePager</RootNamespace>
-    <AssemblyName>ChabadOfficePager</AssemblyName>
+    <RootNamespace>WinPager</RootNamespace>
+    <AssemblyName>WinPager</AssemblyName>
     <Version>1.0.0</Version>
-    <Product>Chabad Office Pager</Product>
-    <Company>Chabad Office</Company>
+    <Product>WinPager</Product>
+    <Company>WinPager</Company>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <PublishSingleFile>true</PublishSingleFile>

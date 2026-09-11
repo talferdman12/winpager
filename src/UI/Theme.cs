@@ -1,6 +1,6 @@
 using System.Drawing.Drawing2D;
 
-namespace ChabadOfficePager.UI;
+namespace WinPager.UI;
 
 /// <summary>Shared colors, fonts, and the programmatically drawn tray icons.</summary>
 public static class Theme

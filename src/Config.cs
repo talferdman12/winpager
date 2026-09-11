@@ -1,10 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace ChabadOfficePager;
+namespace WinPager;
 
 /// <summary>
-/// User settings, persisted to %APPDATA%\ChabadOfficePager\config.json.
+/// User settings, persisted to %APPDATA%\WinPager\config.json.
 /// </summary>
 public sealed class Config
 {
@@ -27,12 +27,12 @@ public sealed class Config
     public int Port { get; set; } = 45654;
 
     /// <summary>Shared secret; only instances with the same value talk to each other.</summary>
-    public string GroupKey { get; set; } = "chabad-office";
+    public string GroupKey { get; set; } = "winpager-default";
 
     [JsonIgnore]
     public static string ConfigDirectory { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ChabadOfficePager");
+        "WinPager");
 
     [JsonIgnore]
     public static string ConfigPath { get; } = Path.Combine(ConfigDirectory, "config.json");

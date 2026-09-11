@@ -1,12 +1,12 @@
 using Microsoft.Win32;
 
-namespace ChabadOfficePager;
+namespace WinPager;
 
 /// <summary>Adds or removes the HKCU Run entry that launches the pager at login.</summary>
 public static class Startup
 {
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string ValueName = "ChabadOfficePager";
+    private const string ValueName = "WinPager";
 
     public static void Apply(bool enabled)
     {

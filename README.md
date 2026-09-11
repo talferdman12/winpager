@@ -1,4 +1,4 @@
-# Chabad Office Pager
+# WinPager
 
 A small Windows system tray app for paging desks around the office. Click the tray
 icon, click a name, and that person gets a Windows notification saying who paged them.
@@ -20,7 +20,7 @@ by itself.
 
 1. Install the **.NET 8 Desktop Runtime** (one-time, free):
    https://dotnet.microsoft.com/download/dotnet/8.0 — pick *Desktop Runtime, x64*.
-2. Copy `ChabadOfficePager.exe` anywhere, e.g. `C:\OfficePager\`.
+2. Copy `WinPager.exe` anywhere, e.g. `C:\WinPager\`.
 3. Double-click it. On first run it asks what to call that desk — use the desk or
    person's name ("Front Desk", "Rabbi's Office"), because that's the button label
    everyone else sees.
@@ -38,7 +38,7 @@ Needs the .NET 8 **SDK** (not just the runtime). Then:
 build.bat
 ```
 
-The finished app lands in `publish\ChabadOfficePager.exe`.
+The finished app lands in `publish\WinPager.exe`.
 
 ## How it works
 
@@ -63,7 +63,7 @@ Right-click the tray icon and choose **Settings**:
 | Large on-screen alert | Shows the red alert window, not just the notification |
 | Start with Windows | Adds a login entry for the current user |
 
-Settings live in `%APPDATA%\ChabadOfficePager\config.json`. Two extra values in that
+Settings live in `%APPDATA%\WinPager\config.json`. Two extra values in that
 file are not in the Settings window:
 
 - `Port` — the UDP port. Change it only if something else needs 45654, and then
@@ -79,7 +79,7 @@ file are not in the Settings window:
    the PC that isn't appearing.
 3. **Is it running there?** Look for the bell in that PC's tray. It hides in the
    overflow arrow by default; drag it onto the visible part of the taskbar.
-4. **Check the log** at `%APPDATA%\ChabadOfficePager\pager.log`. It records every
+4. **Check the log** at `%APPDATA%\WinPager\pager.log`. It records every
    discovery, page, and error.
 
 Some business networks block broadcast traffic between wired and wireless segments.

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace ChabadOfficePager.Net;
+namespace WinPager.Net;
 
 public enum MessageKind
 {

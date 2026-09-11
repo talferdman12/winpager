@@ -1,11 +1,11 @@
-using ChabadOfficePager.UI;
+using WinPager.UI;
 
-namespace ChabadOfficePager;
+namespace WinPager;
 
 internal static class Program
 {
     /// <summary>Guards against a second copy running and fighting over the UDP port.</summary>
-    private const string SingleInstanceMutexName = @"Global\ChabadOfficePager.SingleInstance";
+    private const string SingleInstanceMutexName = @"Global\WinPager.SingleInstance";
 
     [STAThread]
     private static void Main()
@@ -14,8 +14,8 @@ internal static class Program
         if (!isFirstInstance)
         {
             MessageBox.Show(
-                "Chabad Office Pager is already running. Look for the bell icon in your system tray.",
-                "Chabad Office Pager",
+                "WinPager is already running. Look for the bell icon in your system tray.",
+                "WinPager",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
             return;
@@ -28,7 +28,7 @@ internal static class Program
             Log.Write($"Unhandled UI exception: {e.Exception}");
             MessageBox.Show(
                 $"Something went wrong:\n\n{e.Exception.Message}\n\nThe pager will keep running.",
-                "Chabad Office Pager",
+                "WinPager",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
         };

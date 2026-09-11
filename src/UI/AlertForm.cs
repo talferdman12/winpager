@@ -1,7 +1,7 @@
 using System.Media;
-using ChabadOfficePager.Net;
+using WinPager.Net;
 
-namespace ChabadOfficePager.UI;
+namespace WinPager.UI;
 
 /// <summary>
 /// The on-screen alert shown to the person being paged. Sits on top of everything,

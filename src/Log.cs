@@ -1,4 +1,4 @@
-namespace ChabadOfficePager;
+namespace WinPager;
 
 /// <summary>Tiny append-only log. Best-effort: never throws, never blocks startup.</summary>
 public static class Log

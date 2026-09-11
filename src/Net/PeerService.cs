@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 
-namespace ChabadOfficePager.Net;
+namespace WinPager.Net;
 
 /// <summary>
 /// Serverless LAN peer discovery and paging over UDP.

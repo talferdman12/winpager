@@ -1,6 +1,6 @@
-using ChabadOfficePager.Net;
+using WinPager.Net;
 
-namespace ChabadOfficePager.UI;
+namespace WinPager.UI;
 
 /// <summary>
 /// Owns the tray icon and wires the network service to the UI.
@@ -36,7 +36,7 @@ public sealed class TrayContext : ApplicationContext
         _tray = new NotifyIcon
         {
             Icon = Theme.IdleIcon,
-            Text = $"Chabad Office Pager — {config.DisplayName}",
+            Text = $"WinPager — {config.DisplayName}",
             Visible = true,
             ContextMenuStrip = menu,
         };
@@ -53,7 +53,7 @@ public sealed class TrayContext : ApplicationContext
         _service.Start();
         Startup.Apply(config.StartWithWindows);
 
-        _tray.ShowBalloonTip(3000, "Chabad Office Pager",
+        _tray.ShowBalloonTip(3000, "WinPager",
             $"Running as \"{config.DisplayName}\". Click the tray icon to page someone.",
             ToolTipIcon.Info);
     }
@@ -145,14 +145,14 @@ public sealed class TrayContext : ApplicationContext
             ToolTipIcon.Error);
 
     private void OnNetworkError(string message) =>
-        _tray.ShowBalloonTip(8000, "Chabad Office Pager", message, ToolTipIcon.Error);
+        _tray.ShowBalloonTip(8000, "WinPager", message, ToolTipIcon.Error);
 
     private void OpenSettings()
     {
         using var form = new SettingsForm(_config);
         if (form.ShowDialog() != DialogResult.OK) return;
 
-        _tray.Text = $"Chabad Office Pager — {_config.DisplayName}";
+        _tray.Text = $"WinPager — {_config.DisplayName}";
         if (form.NameChanged)
             _service.AnnounceNow();
     }

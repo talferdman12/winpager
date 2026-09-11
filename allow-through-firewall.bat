@@ -9,9 +9,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
-netsh advfirewall firewall delete rule name="Chabad Office Pager" >nul 2>&1
-netsh advfirewall firewall add rule name="Chabad Office Pager" dir=in action=allow protocol=UDP localport=45654 profile=private
-netsh advfirewall firewall add rule name="Chabad Office Pager" dir=out action=allow protocol=UDP localport=45654 profile=private
+netsh advfirewall firewall delete rule name="WinPager" >nul 2>&1
+netsh advfirewall firewall add rule name="WinPager" dir=in action=allow protocol=UDP localport=45654 profile=private
+netsh advfirewall firewall add rule name="WinPager" dir=out action=allow protocol=UDP localport=45654 profile=private
 
 echo.
 echo Firewall rule added for UDP port 45654 on private networks.

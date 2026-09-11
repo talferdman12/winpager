@@ -1,6 +1,6 @@
-using ChabadOfficePager.Net;
+using WinPager.Net;
 
-namespace ChabadOfficePager.UI;
+namespace WinPager.UI;
 
 /// <summary>
 /// The tray fly-out: one big button per desk. Click a button, that person gets paged.
@@ -207,7 +207,7 @@ public sealed class PagerPopup : Form
             MessageBox.Show(
                 this,
                 $"{peer.Name} just went offline. Nothing was sent.",
-                "Chabad Office Pager",
+                "WinPager",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
             return;

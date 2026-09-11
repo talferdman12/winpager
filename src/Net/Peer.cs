@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace ChabadOfficePager.Net;
+namespace WinPager.Net;
 
 /// <summary>Another machine we've heard from recently.</summary>
 public sealed class Peer
